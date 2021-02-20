@@ -3,6 +3,10 @@
 
 #include "GrabberComponent.h"
 
+#include "DrawDebugHelpers.h"
+
+#define OUT
+
 // Sets default values for this component's properties
 UGrabberComponent::UGrabberComponent()
 {
@@ -20,15 +24,22 @@ void UGrabberComponent::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Warning, TEXT("Grabber reporting for duty!"));
-	
 }
 
 
 // Called every frame
-void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+                                      FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
-}
+	// Get players viewpoint
+	FVector PlayerViewPointLocation;
+	FRotator PlayerViewPointRotator;
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT PlayerViewPointLocation, OUT PlayerViewPointRotator);
 
+	FVector LineTraceEnd = PlayerViewPointLocation + PlayerViewPointRotator.Vector() * Reach;
+	DrawDebugLine(GetWorld(), PlayerViewPointLocation, LineTraceEnd, FColor(0, 255, 0), false, 0.0f, 0, 5.0f);
+
+	// See what it hits
+}
