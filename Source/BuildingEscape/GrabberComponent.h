@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
+
 #include "GrabberComponent.generated.h"
 
 
@@ -16,15 +18,23 @@ public:
 	// Sets default values for this component's properties
 	UGrabberComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
 private:
 	float Reach = 100.0f;
+
+	UInputComponent* Input = nullptr;
+	UPhysicsHandleComponent* PhysicsHandle = nullptr;
+
+	void FindPhysicsHandle();
+	void FindInput();
+	FHitResult GetFirstPhysicsBodyInReach() const;
+	void Grab();
+	void Release();
 };
