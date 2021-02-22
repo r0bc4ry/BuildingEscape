@@ -37,4 +37,6 @@ private:
 	FHitResult GetFirstPhysicsBodyInReach() const;
 	void Grab();
 	void Release();
+	FVector GetPlayerReach() const;
+	FVector GetPlayerLocation() const;
 };

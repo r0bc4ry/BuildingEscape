@@ -3,6 +3,10 @@
 
 #include "OpenDoorComponent.h"
 
+#include "Components/AudioComponent.h"
+
+#define OUT
+
 // Sets default values for this component's properties
 UOpenDoorComponent::UOpenDoorComponent()
 {
@@ -23,12 +27,23 @@ void UOpenDoorComponent::BeginPlay()
 	CurrentYaw = InitialYaw;
 	OpenAngle += InitialYaw;
 
+	FindAudio();
+
 	if (!PressurePlate)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s has OpenDoorComponent but no PressurePlate set."), *GetOwner()->GetName())
 	}
 
 	ActorThatOpens = GetWorld()->GetFirstPlayerController()->GetPawn();
+}
+
+void UOpenDoorComponent::FindAudio()
+{
+	Audio = GetOwner()->FindComponentByClass<UAudioComponent>();
+	if (Audio == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Audio not found on %s."), *GetOwner()->GetName());
+	}
 }
 
 
@@ -38,7 +53,7 @@ void UOpenDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (PressurePlate && PressurePlate->IsOverlappingActor(ActorThatOpens))
+	if (TotalMassOfActors() > MassToOpenDoors)
 	{
 		OpenDoor(DeltaTime);
 		DoorLastOpened = GetWorld()->GetTimeSeconds();
@@ -58,6 +73,12 @@ void UOpenDoorComponent::OpenDoor(float DeltaTime)
 	FRotator DoorRotation = GetOwner()->GetActorRotation();
 	DoorRotation.Yaw = CurrentYaw;
 	GetOwner()->SetActorRotation(DoorRotation);
+
+	if (!Audio || OpenDoorSound) return;
+	UE_LOG(LogTemp, Warning, TEXT("Play"));
+	Audio->Play();
+	OpenDoorSound = true;
+	CloseDoorSound = false;
 }
 
 void UOpenDoorComponent::CloseDoor(float DeltaTime)
@@ -66,4 +87,26 @@ void UOpenDoorComponent::CloseDoor(float DeltaTime)
 	FRotator DoorRotation = GetOwner()->GetActorRotation();
 	DoorRotation.Yaw = CurrentYaw;
 	GetOwner()->SetActorRotation(DoorRotation);
+
+	if (!Audio || CloseDoorSound) return;
+	Audio->Play();
+	OpenDoorSound = false;
+	CloseDoorSound = true;
+}
+
+float UOpenDoorComponent::TotalMassOfActors() const
+{
+	float TotalMass = 0.0f;
+
+	if (PressurePlate != nullptr)
+	{
+		TArray<AActor*> OverlappingActors;
+		PressurePlate->GetOverlappingActors(OUT OverlappingActors);
+		for (AActor* Actor : OverlappingActors)
+		{
+			TotalMass += Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+		}
+	}
+
+	return TotalMass;
 }
